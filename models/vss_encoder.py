@@ -314,7 +314,7 @@ class VSSLayer(nn.Module):
 
     def forward(self, x):
         for blk in self.blocks:
-            x = checkpoint.checkpoint(blk, x) if self.use_checkpoint else blk(x)
+            x = checkpoint.checkpoint(blk, x, use_reentrant=False) if self.use_checkpoint else blk(x)
         if self.downsample is not None:
             x = self.downsample(x)
         return x

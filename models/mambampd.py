@@ -44,6 +44,7 @@ class MambaMPD(nn.Module):
         use_ega=True,
         faa_levels=2,
         faa_wavelet="db1",
+        use_checkpoint=False,
     ):
         super().__init__()
         self.in_chans = in_chans
@@ -53,6 +54,7 @@ class MambaMPD(nn.Module):
         self.deep_supervision = deep_supervision
         self.use_faa = use_faa
         self.use_ega = use_ega
+        self.use_checkpoint = use_checkpoint
 
         # Frequency-Aware Augmentation on the raw input (before patch embedding).
         self.faa = FAA(channels=in_chans, wt_levels=faa_levels, wt_type=faa_wavelet) if use_faa else None
@@ -63,7 +65,7 @@ class MambaMPD(nn.Module):
             nn.InstanceNorm2d(self.feat_size[0], eps=1e-5, affine=True),
         )
 
-        self.vssm_encoder = VSSMEncoder(patch_size=2, in_chans=self.feat_size[0])
+        self.vssm_encoder = VSSMEncoder(patch_size=2, in_chans=self.feat_size[0], use_checkpoint=use_checkpoint)
 
         # Channel-aligning encoder blocks for the skip connections.
         self.encoder1 = UnetrBasicBlock(spatial_dims, in_chans, self.feat_size[0], 3, 1, norm_name=norm_name, res_block=res_block)
