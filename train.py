@@ -66,20 +66,37 @@ def validation_loop(loader, model, criterion, device, num_classes):
     return valid_loss / num_batches, valid_acc / num_batches, valid_iou / num_batches
 
 
-def train_loop(loader, model, criterion, optimizer, device):
+def train_loop(loader, model, criterion, optimizer, device, grad_accum_steps=1):
+    """Train using gradient accumulation over micro-batches.
+
+    grad_accum_steps allows simulating an effective batch size (batch_size * grad_accum_steps)
+    while keeping only one physical batch in GPU memory at a time.
+    """
     model.train()
     num_batches = len(loader)
     train_loss = 0.0
-    for image, label in loader:
-        image = image.to(device, dtype=torch.float)
-        label = label.to(device, dtype=torch.long)
 
-        optimizer.zero_grad()
-        outputs = model(image)
-        loss = criterion(outputs, label)
-        loss.backward()
+    optimizer.zero_grad()
+    data_iter = iter(loader)
+    batch_idx = 0
+
+    while batch_idx < num_batches:
+        group_size = min(grad_accum_steps, num_batches - batch_idx)
+        for _ in range(group_size):
+            image, label = next(data_iter)
+            image = image.to(device, dtype=torch.float)
+            label = label.to(device, dtype=torch.long)
+
+            outputs = model(image)
+            raw_loss = criterion(outputs, label)
+            loss = raw_loss / group_size
+            loss.backward()
+            train_loss += raw_loss.item()
+            batch_idx += 1
+
         optimizer.step()
-        train_loss += loss.item()
+        optimizer.zero_grad()
+
     return train_loss / num_batches
 
 
@@ -103,7 +120,12 @@ def batch_train(flags):
         deep_supervision=bool(flags.deep_supervision),
         use_faa=bool(flags.use_faa),
         use_ega=bool(flags.use_ega),
+        use_checkpoint=bool(flags.activation_checkpointing),
     )
+    if flags.activation_checkpointing:
+        for layer in model.vssm_encoder.layers:
+            layer.use_checkpoint = True
+
     if flags.pretrained_ckpt and os.path.isfile(flags.pretrained_ckpt):
         model = load_pretrained_ckpt(model, flags.pretrained_ckpt)
     else:
@@ -127,7 +149,9 @@ def batch_train(flags):
     best_iou = 0.0
     for epoch in range(1, flags.num_epochs + 1):
         t0 = time.time()
-        train_loss = train_loop(train_loader, model, criterion, optimizer, device)
+        train_loss = train_loop(
+            train_loader, model, criterion, optimizer, device, grad_accum_steps=flags.grad_accum_steps
+        )
         valid_loss, valid_acc, valid_iou = validation_loop(
             valid_loader, model, criterion, device, flags.num_classes
         )
@@ -161,6 +185,9 @@ def get_args():
     parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--num_epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--grad_accum_steps", type=int, default=1, help="gradient accumulation steps")
+    parser.add_argument("--activation_checkpointing", type=int, default=0, choices=[0, 1],
+                        help="enable activation checkpointing in VSS encoder layers")
     parser.add_argument("--num_classes", type=int, default=5)
     parser.add_argument("--in_chans", type=int, default=3)
     parser.add_argument("--random_state", type=int, default=3)
