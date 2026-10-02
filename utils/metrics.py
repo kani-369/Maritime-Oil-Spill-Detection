@@ -6,11 +6,9 @@ import numpy as np
 def compute_mean_pixel_acc(true_label, pred_label):
     """Mean pixel accuracy over a batch of (B, H, W) label tensors."""
     if true_label.shape != pred_label.shape:
-        print("shape mismatch:", true_label.shape, pred_label.shape)
-        return
+        raise ValueError(f"Shape mismatch: {true_label.shape} vs {pred_label.shape}")
     if true_label.dim() != 3:
-        print("true_label must be 3-D, got dim", true_label.dim())
-        return
+        raise ValueError(f"true_label must be 3-D, got dim {true_label.dim()}")
 
     acc_sum = 0
     for i in range(true_label.shape[0]):
@@ -34,8 +32,9 @@ def compute_mean_IOU(true_label, pred_label, num_classes=5):
             continue
         intersection = (pred_inds[target_inds]).long().sum().item()
         union = pred_inds.long().sum().item() + target_inds.long().sum().item() - intersection
-        present_iou_list.append(float(intersection) / float(union))
-    return np.mean(np.array(present_iou_list))
+        if union > 0:
+            present_iou_list.append(float(intersection) / float(union))
+    return float(np.mean(present_iou_list)) if len(present_iou_list) > 0 else 0.0
 
 
 def compute_class_IOU(true_label, pred_label, num_classes=5):
