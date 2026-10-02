@@ -43,7 +43,7 @@ class ImagePadder:
         self._anchor_image_resized_shape = self._anchor_image_resized.shape
 
     def pad_image(self, image):
-        padded_image = self._anchor_image_resized
+        padded_image = self._anchor_image_resized.copy()
         padded_image[
             self._pad_top : self._anchor_image_resized_shape[0] - self._pad_bottom,
             self._pad_left : self._anchor_image_resized_shape[1] - self._pad_right,

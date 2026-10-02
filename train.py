@@ -38,10 +38,8 @@ class PolynomialLR(LRScheduler):
         super().__init__(optimizer, last_epoch)
 
     def get_lr(self):
-        return [
-            max(base_lr * (1 - self.last_epoch / self.max_epochs) ** self.power, self.min_lr)
-            for base_lr in self.base_lrs
-        ]
+        factor = max(1.0 - self.last_epoch / self.max_epochs, 0.0) ** self.power
+        return [max(base_lr * factor, self.min_lr) for base_lr in self.base_lrs]
 
 
 def _main_output(outputs):
