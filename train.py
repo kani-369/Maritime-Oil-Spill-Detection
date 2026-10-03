@@ -103,10 +103,6 @@ def train_loop(loader, model, criterion, optimizer, device, grad_accum_steps=1):
 def batch_train(flags):
     dir_path = os.path.join(flags.dir_model, flags.which_model)
     os.makedirs(dir_path, exist_ok=True)
-    csv_writer = CSVWriter(
-        file_name=os.path.join(dir_path, "train_metrics.csv"),
-        column_names=["epoch", "train_loss", "valid_loss", "valid_acc", "valid_IOU"],
-    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -126,10 +122,6 @@ def batch_train(flags):
         for layer in model.vssm_encoder.layers:
             layer.use_checkpoint = True
 
-    if flags.pretrained_ckpt and os.path.isfile(flags.pretrained_ckpt):
-        model = load_pretrained_ckpt(model, flags.pretrained_ckpt)
-    else:
-        print("No pretrained checkpoint loaded (training encoder from scratch).")
     model.to(device)
 
     criterion = DeepSupervisionLoss()
@@ -143,11 +135,67 @@ def batch_train(flags):
         optimizer = torch.optim.AdamW(model.parameters(), lr=flags.learning_rate, weight_decay=flags.weight_decay)
         lr_scheduler = None
 
+    start_epoch = 1
+    best_iou = 0.0
+    completed_epoch = 0
+
+    if flags.resume:
+        resume_path = (
+            flags.resume
+            if isinstance(flags.resume, str) and flags.resume.strip() not in ("", "1", "True", "true")
+            else os.path.join(dir_path, "checkpoint_latest.pth")
+        )
+        if not os.path.isfile(resume_path):
+            raise FileNotFoundError(
+                f"Resume checkpoint not found: '{resume_path}'. "
+                "Cannot resume without an existing checkpoint. "
+                "To start a fresh training run, omit the --resume flag."
+            )
+
+        print(f"Resuming training from checkpoint: {resume_path}")
+        checkpoint = torch.load(resume_path, map_location=device)
+
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
+
+        if lr_scheduler is not None and checkpoint.get("scheduler_state_dict") is not None:
+            lr_scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+        completed_epoch = int(checkpoint["epoch"])
+        best_iou = float(checkpoint.get("best_iou", 0.0))
+        start_epoch = completed_epoch + 1
+
+        print(
+            f"Successfully restored checkpoint from epoch {completed_epoch} "
+            f"(best validation mIoU so far: {best_iou:.5f})."
+        )
+        print(f"Resuming training from epoch {start_epoch} to {flags.num_epochs}...\n")
+    else:
+        if flags.pretrained_ckpt and os.path.isfile(flags.pretrained_ckpt):
+            model = load_pretrained_ckpt(model, flags.pretrained_ckpt)
+        else:
+            print("No pretrained checkpoint loaded (training encoder from scratch).")
+
+    csv_writer = CSVWriter(
+        file_name=os.path.join(dir_path, "train_metrics.csv"),
+        column_names=["epoch", "train_loss", "valid_loss", "valid_acc", "valid_IOU"],
+        append=bool(flags.resume),
+        completed_epoch=completed_epoch if flags.resume else None,
+    )
+
     print(f"\ntraining MambaMPD ({flags.which_model}) on {device}\n")
     write_dict_to_json(os.path.join(dir_path, "params.json"), vars(flags))
 
-    best_iou = 0.0
-    for epoch in range(1, flags.num_epochs + 1):
+    if start_epoch > flags.num_epochs:
+        print(f"Training already completed up to epoch {completed_epoch} (total epochs: {flags.num_epochs}). Nothing to train.")
+        csv_writer.close()
+        return
+
+    for epoch in range(start_epoch, flags.num_epochs + 1):
         t0 = time.time()
         train_loss = train_loop(
             train_loader, model, criterion, optimizer, device, grad_accum_steps=flags.grad_accum_steps
@@ -168,6 +216,20 @@ def batch_train(flags):
             torch.save(model.state_dict(), os.path.join(dir_path, "mambampd_best.pt"))
         if lr_scheduler is not None:
             lr_scheduler.step()
+
+        # Resumable checkpoint representing the fully completed epoch state
+        checkpoint = {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": lr_scheduler.state_dict() if lr_scheduler is not None else None,
+            "best_iou": best_iou,
+            "config": vars(flags),
+        }
+        latest_ckpt_path = os.path.join(dir_path, "checkpoint_latest.pth")
+        tmp_ckpt_path = latest_ckpt_path + ".tmp"
+        torch.save(checkpoint, tmp_ckpt_path)
+        os.replace(tmp_ckpt_path, latest_ckpt_path)
 
     print(f"Training complete. Best validation mIoU: {best_iou:.5f}")
     csv_writer.close()
@@ -194,6 +256,13 @@ def get_args():
     parser.add_argument("--deep_supervision", type=int, default=1, choices=[0, 1])
     parser.add_argument("--use_faa", type=int, default=1, choices=[0, 1], help="enable Frequency-Aware Augmentation")
     parser.add_argument("--use_ega", type=int, default=1, choices=[0, 1], help="enable Edge-Guided Attention")
+    parser.add_argument(
+        "--resume",
+        nargs="?",
+        const=True,
+        default=False,
+        help="resume training from checkpoint_latest.pth (or specify custom checkpoint path)",
+    )
     return parser.parse_known_args()[0]
 
 
