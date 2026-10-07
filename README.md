@@ -62,25 +62,4 @@ python train.py ... --use_ega 0            # without EGA
 python train.py ... --deep_supervision 0   # without deep supervision
 ```
 
-### Train on MADOS
 
-```bash
-python train_mados.py --path ./data/MADOS \
-    --pretrained_ckpt pretrained/vssmtiny_dp01_ckpt_epoch_292.pth \
-    --batch 4 --epochs 100
-```
-
-Configuration: `config/mambampd_mados.yaml`.
-
-### Evaluate on MADOS
-
-```bash
-python eval_mados.py --path ./data/MADOS \
-    --model_path trained_models_mados/model_best.pth --split test
-```
-
-### Demo app
-
-```bash
-streamlit run app.py
-```
