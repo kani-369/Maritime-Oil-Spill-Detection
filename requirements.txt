@@ -17,6 +17,7 @@ scikit-image>=0.19
 scikit-learn>=1.2
 opencv-python-headless>=4.6
 PyYAML>=6.0
+Pillow>=9.3
 
 # MADOS dataset pipeline (multispectral Sentinel-2)
 rasterio>=1.3            # reads the 11-band .tif patches
@@ -25,7 +26,3 @@ pandas>=1.4             # confusion-matrix tables
 tqdm>=4.6
 tensorboard>=2.10
 
-# Demo app
-streamlit>=1.17
-matplotlib>=3.6
-Pillow>=9.3
