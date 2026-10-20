@@ -56,17 +56,28 @@ def evaluate(loader, list_images, model, num_classes, device, dir_masks=None):
         image = image.to(device, dtype=torch.float)
         label = label.to(device, dtype=torch.long)
 
-        pred_label = torch.argmax(torch.softmax(_main_output(model(image)), dim=1), dim=1)
+        pred_label = torch.argmax(
+            torch.softmax(_main_output(model(image)), dim=1),
+            dim=1,
+        )
+
+        # Remove artificial padding: top/bottom = 11, left/right = 15.
+        pred_label = pred_label[:, 11:-11, 15:-15]
+        label = label[:, 11:-11, 15:-15]
 
         infer_acc += compute_mean_pixel_acc(label, pred_label)
-        sample_iou = compute_class_IOU(label, pred_label, num_classes=num_classes)
+        sample_iou = compute_class_IOU(
+            label, pred_label, num_classes=num_classes
+        )
         class_iou = sample_iou if class_iou.size == 0 else np.vstack((class_iou, sample_iou))
 
         if dir_masks is not None:
             arr = np.squeeze(pred_label.detach().cpu().numpy()).astype(np.uint8)
-            h, w = arr.shape
-            mask = colorize(arr, num_classes)[11 : h - 11, 15 : w - 15]
-            imsave(os.path.join(dir_masks, list_images[i].replace(".jpg", ".png")), mask)
+            mask = colorize(arr, num_classes)
+            imsave(
+                os.path.join(dir_masks, list_images[i].replace(".jpg", ".png")),
+                mask,
+            )
 
     infer_acc /= len(loader)
     per_class_iou = np.nanmean(class_iou, axis=0)
