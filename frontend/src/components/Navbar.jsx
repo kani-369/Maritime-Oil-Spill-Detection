@@ -1,13 +1,18 @@
 import React from 'react';
-import { Waves, Map as MapIcon, BarChart3, Grid, FileDown, Settings, User } from 'lucide-react';
+import { Waves, Map as MapIcon, BarChart3, Grid, FileDown, Settings, User, Cpu, Database } from 'lucide-react';
 
-export default function Navbar({ activeTab = 'Map', onSelectTab }) {
+export default function Navbar({ activeTab = 'Map', onSelectTab, health = null }) {
   const tabs = [
     { name: 'Map', icon: MapIcon },
     { name: 'Analysis', icon: BarChart3 },
     { name: 'Detections', icon: Grid },
     { name: 'Exports', icon: FileDown },
   ];
+
+  const hasCheckpoint = health?.checkpoint_exists;
+  const isCuda = health?.cuda_available;
+  const deviceName = health?.device_name || (isCuda ? 'NVIDIA GPU' : 'CPU');
+  const checkpointName = hasCheckpoint ? 'final_model.pth' : 'MambaMPD Checkpoint';
 
   return (
     <header className="h-14 bg-[#09131f] border-b border-[#182a40] px-4 flex items-center justify-between shrink-0 z-30 select-none">
@@ -50,10 +55,35 @@ export default function Navbar({ activeTab = 'Map', onSelectTab }) {
       </div>
 
       {/* Right: Status Pill & Controls */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-[#0d1a2d] border border-[#1c304a] px-3 py-1 rounded-full text-xs font-medium">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" />
-          <span className="text-slate-200 text-[11px] font-mono">Model Online</span>
+      <div className="flex items-center gap-2.5">
+        {/* Model & Checkpoint Status Badge */}
+        <div
+          title={hasCheckpoint ? `Checkpoint: ${health.default_checkpoint_path}` : 'Default Checkpoint'}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+            hasCheckpoint
+              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+              : 'bg-amber-950/40 border-amber-500/40 text-amber-300'
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              hasCheckpoint ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+            }`}
+          />
+          <span className="text-[11px] font-mono font-medium">
+            {checkpointName}
+          </span>
+        </div>
+
+        {/* Hardware Acceleration Badge */}
+        <div
+          title={`Compute Device: ${deviceName}`}
+          className="flex items-center gap-1.5 bg-[#0d1a2d] border border-[#1c304a] px-2.5 py-1 rounded-full text-xs font-medium text-slate-300"
+        >
+          <Cpu className="w-3 h-3 text-cyan-400" />
+          <span className="text-[11px] font-mono">
+            {isCuda ? 'CUDA' : 'CPU'}
+          </span>
         </div>
 
         <button

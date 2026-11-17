@@ -26,6 +26,9 @@ class DetectionMetadata(BaseModel):
     satellite: Optional[str] = None
     polarization: Optional[str] = None
     resolution: Optional[str] = None
+    latency_ms: Optional[float] = None
+    device: Optional[str] = None
+    checkpoint_loaded: Optional[str] = None
 
 
 class DetectionResponse(BaseModel):
@@ -41,7 +44,11 @@ class DetectionResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     device: str
+    device_name: Optional[str] = None
     cuda_available: bool
     pytorch_version: str
     default_checkpoint_path: str
     checkpoint_exists: bool
+    checkpoint_size_mb: Optional[float] = None
+    dataset_dir: Optional[str] = None
+    dataset_count: Optional[int] = None

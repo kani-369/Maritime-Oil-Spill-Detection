@@ -20,10 +20,20 @@ FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
 FRONTEND_DIST = os.path.join(FRONTEND_DIR, "dist")
 
 
-def build_frontend_if_needed():
+def build_frontend_if_needed(force_rebuild: bool = False):
     """Ensure React frontend is built into static HTML/JS/CSS assets."""
-    if not os.path.isdir(FRONTEND_DIST) or not os.path.isfile(os.path.join(FRONTEND_DIST, "index.html")):
-        print("📦 Building React + Tailwind + MapLibre frontend (this takes ~30-45 seconds)...")
+    index_file = os.path.join(FRONTEND_DIST, "index.html")
+    src_modified = False
+    if os.path.isfile(index_file):
+        dist_mtime = os.path.getmtime(index_file)
+        for root, _, files in os.walk(os.path.join(FRONTEND_DIR, "src")):
+            for f in files:
+                if os.path.getmtime(os.path.join(root, f)) > dist_mtime:
+                    src_modified = True
+                    break
+
+    if force_rebuild or not os.path.isfile(index_file) or src_modified:
+        print("📦 Building updated React + Tailwind + MapLibre frontend (takes ~20-30s on Kaggle)...")
         # Check npm
         try:
             subprocess.run(["npm", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -99,12 +109,13 @@ def start_tunnel():
 
 
 def main():
+    force_rebuild = "--rebuild" in sys.argv
     print("=" * 70)
     print("🌊 MambaMPD Maritime Oil Spill Full-Stack Application Launcher")
     print("=" * 70)
 
-    # 1. Build frontend if dist doesn't exist
-    build_frontend_if_needed()
+    # 1. Build frontend if dist doesn't exist or if src was updated
+    build_frontend_if_needed(force_rebuild=force_rebuild)
 
     # 2. Start combined server
     backend_proc = start_backend()

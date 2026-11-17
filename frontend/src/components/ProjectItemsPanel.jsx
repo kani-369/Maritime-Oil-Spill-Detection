@@ -14,6 +14,9 @@ import {
   Ban,
   Layers,
   Share2,
+  Zap,
+  Loader2,
+  Tag,
 } from 'lucide-react';
 
 export default function ProjectItemsPanel({
@@ -21,6 +24,9 @@ export default function ProjectItemsPanel({
   selectedItemId,
   onSelectItem,
   onUploadImage,
+  onRunInference,
+  isInferring = false,
+  datasetDir = null,
   isCollapsed,
   onToggleCollapse,
 }) {
@@ -147,80 +153,128 @@ export default function ProjectItemsPanel({
               <div
                 key={item.id}
                 onClick={() => onSelectItem && onSelectItem(item)}
-                className={`p-2 rounded-lg border cursor-pointer transition-all flex gap-2.5 ${
+                className={`p-2 rounded-lg border cursor-pointer transition-all flex flex-col gap-2 ${
                   isSelected
                     ? 'bg-[#0f2136] border-cyan-500/80 shadow-md shadow-cyan-950/40 ring-1 ring-cyan-500/30'
                     : 'bg-[#0b1726] border-[#18293d] hover:border-[#233c5a] hover:bg-[#0e1d30]'
                 }`}
               >
-                {/* Thumbnail Image */}
-                <div className="w-16 h-16 rounded overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative">
-                  <img
-                    src={item.thumbnailUrl || '/sample_thumb.jpg'}
-                    alt={item.filename}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback synthetic texture if remote thumbnail fails
-                      e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="%230b192c"><rect width="64" height="64"/><circle cx="32" cy="32" r="16" fill="%231e3e62"/></svg>';
-                    }}
-                  />
-                  {isSelected && (
-                    <div className="absolute inset-0 border border-cyan-400/40 rounded pointer-events-none" />
-                  )}
-                </div>
-
-                {/* Technical Information */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between">
-                  <div
-                    className="text-xs font-semibold text-slate-200 truncate font-mono"
-                    title={item.filename}
-                  >
-                    {item.filename}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-400 mt-1">
-                    <span className="flex items-center gap-1 truncate">
-                      <Calendar className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-                      {item.date || '2021 Apr 23'}
-                    </span>
-                    <span className="flex items-center gap-1 truncate">
-                      <Satellite className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-                      {item.satellite || 'Sentinel-1A'}
-                    </span>
-                    <span className="flex items-center gap-1 truncate">
-                      <Ruler className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-                      {item.resolution || '10 m'}
-                    </span>
-                    <span className="flex items-center gap-1 truncate">
-                      <Maximize2 className="w-2.5 h-2.5 text-slate-500 shrink-0" />
-                      {item.dimensions || '17,480 × 12,320'}
-                    </span>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="mt-1.5 flex items-center">
-                    {item.status === 'processed' ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded font-medium">
-                        <CheckCircle2 className="w-2.5 h-2.5" />
-                        Processed
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 bg-slate-800/40 border border-slate-700/40 px-1.5 py-0.5 rounded font-medium">
-                        <Ban className="w-2.5 h-2.5" />
-                        Not Processed
-                      </span>
+                <div className="flex gap-2.5">
+                  {/* Thumbnail Image */}
+                  <div className="w-16 h-16 rounded overflow-hidden bg-slate-950 border border-slate-800 shrink-0 relative">
+                    <img
+                      src={item.thumbnailUrl || '/sample_thumb.jpg'}
+                      alt={item.filename}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="%230b192c"><rect width="64" height="64"/><circle cx="32" cy="32" r="16" fill="%231e3e62"/></svg>';
+                      }}
+                    />
+                    {isSelected && (
+                      <div className="absolute inset-0 border border-cyan-400/40 rounded pointer-events-none" />
                     )}
                   </div>
+
+                  {/* Technical Information */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-between">
+                    <div
+                      className="text-xs font-semibold text-slate-200 truncate font-mono"
+                      title={item.filename}
+                    >
+                      {item.filename}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-slate-400 mt-1">
+                      <span className="flex items-center gap-1 truncate">
+                        <Calendar className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                        {item.date || '2021 Apr 23'}
+                      </span>
+                      <span className="flex items-center gap-1 truncate">
+                        <Satellite className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                        {item.satellite || 'Sentinel-1A'}
+                      </span>
+                      <span className="flex items-center gap-1 truncate">
+                        <Ruler className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                        {item.resolution || '10 m'}
+                      </span>
+                      <span className="flex items-center gap-1 truncate">
+                        <Maximize2 className="w-2.5 h-2.5 text-slate-500 shrink-0" />
+                        {item.dimensions || '512 × 512'}
+                      </span>
+                    </div>
+
+                    {/* Status & GT Badges */}
+                    <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                      {item.status === 'processed' ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded font-medium">
+                          <CheckCircle2 className="w-2.5 h-2.5" />
+                          Processed
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-slate-400 bg-slate-800/40 border border-slate-700/40 px-1.5 py-0.5 rounded font-medium">
+                          <Ban className="w-2.5 h-2.5" />
+                          Ready for Detection
+                        </span>
+                      )}
+
+                      {item.has_ground_truth && (
+                        <span className="inline-flex items-center gap-1 text-[9px] text-purple-300 bg-purple-950/40 border border-purple-500/30 px-1.5 py-0.5 rounded font-mono">
+                          <Tag className="w-2 h-2 text-purple-400" />
+                          GT Label
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Explicit "Run Inference" Button for Selected Item */}
+                {isSelected && (
+                  <div
+                    className="pt-2 border-t border-[#1a334d] flex flex-col gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      disabled={isInferring}
+                      onClick={() => onRunInference && onRunInference(item)}
+                      className={`w-full py-1.5 px-3 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
+                        isInferring
+                          ? 'bg-amber-600/60 text-amber-100 cursor-wait animate-pulse'
+                          : item.status === 'processed'
+                          ? 'bg-[#183656] hover:bg-[#204975] text-cyan-300 border border-cyan-500/50 hover:shadow-cyan-900/30'
+                          : 'bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold shadow-amber-500/30 hover:scale-[1.01]'
+                      }`}
+                    >
+                      {isInferring ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                          <span>MambaMPD GPU Inference Running...</span>
+                        </>
+                      ) : item.status === 'processed' ? (
+                        <>
+                          <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Re-run MambaMPD Inference</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>⚡ Run MambaMPD Detection</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Footer Item Count */}
+        {/* Footer Item Count & Source */}
         <div className="h-8 px-3 border-t border-[#182a40] flex items-center justify-between text-[11px] text-slate-500 bg-[#070e17]">
-          <span>{items.length} / {items.length} items</span>
-          <span className="font-mono text-cyan-400/80">Kaggle / Local</span>
+          <span>{items.length} / {items.length} images</span>
+          <span className="font-mono text-cyan-400/80 truncate max-w-[140px]" title={datasetDir || 'Kaggle M4D'}>
+            {datasetDir ? 'Kaggle: M4D' : 'Local / Kaggle'}
+          </span>
         </div>
       </div>
     </aside>

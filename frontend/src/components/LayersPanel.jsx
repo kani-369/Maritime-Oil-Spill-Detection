@@ -109,6 +109,15 @@ export default function LayersPanel({
       label: 'Resolution',
       value: metadata?.resolution || '10 m',
     },
+    ...(metadata?.latency_ms !== undefined
+      ? [{ label: 'Inference Latency', value: `${metadata.latency_ms} ms`, mono: true, highlight: true }]
+      : []),
+    ...(metadata?.device
+      ? [{ label: 'Compute Device', value: metadata.device, mono: true }]
+      : []),
+    ...(metadata?.checkpoint_loaded
+      ? [{ label: 'Model Checkpoint', value: metadata.checkpoint_loaded, mono: true }]
+      : []),
   ];
 
   return (

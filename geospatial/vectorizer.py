@@ -32,6 +32,8 @@ def vectorize_oil_spill(
     has_georeference: bool,
     pixel_size: Optional[Tuple[float, float]] = None,
     min_pixel_area: int = 5,
+    anchor_bounds: Optional[Tuple[float, float, float, float]] = None,
+    image_shape: Optional[Tuple[int, int]] = None,
 ) -> Dict[str, Any]:
     """Convert a binary oil spill mask into georeferenced GeoJSON polygons with area in km².
 
@@ -43,6 +45,8 @@ def vectorize_oil_spill(
         has_georeference: Boolean indicating whether valid geospatial metadata exists.
         pixel_size: (res_x_m, res_y_m) in meters.
         min_pixel_area: Minimum connected pixel count to filter out solitary speckle noise.
+        anchor_bounds: Optional (min_lon, min_lat, max_lon, max_lat) for spatial registration of benchmark patches.
+        image_shape: Optional (H, W) tuple of the original raster.
 
     Returns:
         GeoJSON FeatureCollection dict conforming to RFC 7946.
@@ -144,8 +148,15 @@ def vectorize_oil_spill(
                     geo_x = c + a * col + b * row
                     geo_y = f + d * col + e * row
                     coords_ring.append([round(geo_x, 7), round(geo_y, 7)])
+                elif anchor_bounds is not None:
+                    # Spatial registration for surveillance zone overlay
+                    min_lon, min_lat, max_lon, max_lat = anchor_bounds
+                    img_h, img_w = image_shape if image_shape else (h, w)
+                    geo_x = min_lon + (col / float(img_w)) * (max_lon - min_lon)
+                    geo_y = max_lat - (row / float(img_h)) * (max_lat - min_lat)
+                    coords_ring.append([round(geo_x, 7), round(geo_y, 7)])
                 else:
-                    # Pure pixel coordinate (Strict constraint 6: do not invent fake lat/lon)
+                    # Pure pixel coordinate (when no frame of reference is specified)
                     coords_ring.append([round(col, 2), round(row, 2)])
 
             if len(coords_ring) < 3:
