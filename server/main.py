@@ -8,6 +8,8 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
+from fastapi.staticfiles import StaticFiles
+
 from .schemas import DetectionResponse, HealthResponse, DetectionMetadata
 from .services import DetectionService, CACHE_DIR
 
@@ -136,6 +138,7 @@ def get_sample_files():
     """List available sample images in the repository or common dataset locations."""
     sample_dirs = [
         "sample_data",
+        "/kaggle/input/datasets/kanish369/m4d-mambampd-corrected/M4D_MambaMPD_corrected/test/images",
         "sample_padding_image_for_inference",
         "data/M4D/test/images",
         "/kaggle/input/m4d-oil-spill-detection-dataset/test/images",
@@ -147,3 +150,9 @@ def get_sample_files():
                 if f.lower().endswith((".jpg", ".jpeg", ".png", ".tif", ".tiff")):
                     found.append({"name": f, "path": os.path.join(d, f)})
     return {"samples": found[:15]}
+
+
+# Mount React build so FastAPI serves both frontend and backend on one single port
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+if os.path.isdir(FRONTEND_DIST):
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")

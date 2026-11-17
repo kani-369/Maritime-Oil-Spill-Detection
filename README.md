@@ -63,16 +63,22 @@ MambaMPD/
 
 Because your dataset and checkpoints are located on Kaggle, you can run the pipeline directly inside your Kaggle notebook environment:
 
-### Option A: Run the Batch Runner in a Kaggle Notebook Cell
+## Running the Full-Stack Interactive Web App in Kaggle
+
+To launch the complete 3-panel UI directly from your Kaggle notebook:
 
 ```bash
-!python kaggle/run_pipeline_kaggle.py \
-    --input_path /kaggle/input/m4d-oil-spill-detection-dataset/test/images \
-    --checkpoint /kaggle/input/mambampd-checkpoints/mambampd_best.pt \
-    --output_dir /kaggle/working/detections \
-    --oil_threshold 0.5 \
-    --min_pixel_area 5
+# Cell 1: Clone and install dependencies
+!git clone https://github.com/kani-369/Maritime-Oil-Spill-Detection.git MambaMPD
+%cd /kaggle/working/MambaMPD
+!pip install -q -r requirements.txt
+!pip install -q causal-conv1d>=1.4.0 mamba-ssm>=2.2.0 --no-build-isolation
+
+# Cell 2: Launch the full application with a public browser URL
+!python launch_app.py
 ```
+
+Click the generated `https://xxxx.loca.lt` link in the notebook output to interact with the full application live in your browser while Kaggle's GPU handles the inference!
 
 This will:
 * Process all SAR test rasters through MambaMPD.

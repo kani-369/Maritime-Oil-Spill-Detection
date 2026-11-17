@@ -40,6 +40,8 @@ class DetectionService:
         ckpt = checkpoint_path if checkpoint_path and os.path.isfile(checkpoint_path) else self.default_checkpoint
         if not os.path.isfile(ckpt):
             kaggle_candidates = [
+                "/kaggle/input/datasets/kanish369/the-final-trianed-model/final_model.pth",
+                "/kaggle/input/**/final_model.pth",
                 "/kaggle/input/mambampd-checkpoints/mambampd_best.pt",
                 "/kaggle/working/mambampd/mambampd_best.pt",
                 "mambampd_best.pt",
