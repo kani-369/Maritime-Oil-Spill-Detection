@@ -81,13 +81,13 @@ def start_tunnel():
         )
 
         for line in tunnel_proc.stdout:
-            print(line, end="")
+            print(line, end="", flush=True)
             if "your url is:" in line.lower():
                 url = line.strip().split()[-1]
-                print("\n" + "*" * 70)
-                print(f"🎉 CLICK HERE TO OPEN THE FULL APPLICATION IN YOUR BROWSER:")
-                print(f"👉 {url}")
-                print("*" * 70 + "\n")
+                print("\n" + "*" * 70, flush=True)
+                print(f"🎉 CLICK HERE TO OPEN THE FULL APPLICATION IN YOUR BROWSER:", flush=True)
+                print(f"👉 {url}", flush=True)
+                print("*" * 70 + "\n", flush=True)
                 break
 
         tunnel_proc.wait()
