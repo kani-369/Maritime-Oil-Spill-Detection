@@ -94,10 +94,19 @@ async def detect_oil_spill(
         target_path = file_path
         filename = os.path.basename(file_path)
     else:
-        raise HTTPException(
-            status_code=400,
-            detail="Either upload a file or provide a valid 'file_path' on the server/Kaggle disk.",
-        )
+        # Automatic fallback: pick the first available real test image from Kaggle dataset
+        ds_dir = find_dataset_images_dir()
+        if ds_dir and os.path.isdir(ds_dir):
+            for cand in sorted(os.listdir(ds_dir)):
+                if cand.lower().endswith((".png", ".jpg", ".jpeg", ".tif")):
+                    target_path = os.path.join(ds_dir, cand)
+                    filename = cand
+                    break
+        if not target_path or not os.path.isfile(target_path):
+            raise HTTPException(
+                status_code=400,
+                detail="Either upload a file or provide a valid 'file_path' on the server/Kaggle disk.",
+            )
 
     try:
         res = service.process_raster_file(

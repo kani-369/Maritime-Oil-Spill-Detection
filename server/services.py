@@ -50,11 +50,24 @@ def find_dataset_images_dir() -> Optional[str]:
         if os.path.isdir(cand) and any(f.lower().endswith((".png", ".jpg", ".jpeg", ".tif", ".tiff")) for f in os.listdir(cand)):
             return cand
 
-    # Deep search under /kaggle/input
-    if os.path.isdir("/kaggle/input"):
-        for root, dirs, files in os.walk("/kaggle/input"):
-            if os.path.basename(root) == "images" and any(f.lower().endswith((".png", ".jpg", ".jpeg", ".tif")) for f in files):
-                return root
+    # Deep case-insensitive search under /kaggle/input and /kaggle/working
+    for search_root in ("/kaggle/input", "/kaggle/working"):
+        if os.path.isdir(search_root):
+            # Prioritize test/images
+            for root, dirs, files in os.walk(search_root):
+                if "test" in root.lower() and os.path.basename(root).lower() == "images":
+                    if any(f.lower().endswith((".png", ".jpg", ".jpeg", ".tif")) for f in files):
+                        return root
+            # Then any images folder
+            for root, dirs, files in os.walk(search_root):
+                if os.path.basename(root).lower() == "images" and any(f.lower().endswith((".png", ".jpg", ".jpeg", ".tif")) for f in files):
+                    return root
+            # Fallback to any folder containing image datasets
+            for root, dirs, files in os.walk(search_root):
+                imgs = [f for f in files if f.lower().endswith((".png", ".jpg", ".jpeg", ".tif"))]
+                if len(imgs) >= 5:
+                    return root
+
     return "sample_data" if os.path.isdir("sample_data") else None
 
 

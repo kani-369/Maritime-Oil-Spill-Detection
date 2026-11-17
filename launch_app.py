@@ -72,7 +72,50 @@ def get_public_ip():
 
 
 def start_tunnel():
-    """Expose port 8000 via localtunnel and display the clickable URL."""
+    """Expose port 8000 via Cloudflare Tunnel (primary) or Localtunnel (fallback)."""
+    cf_bin = "/tmp/cloudflared"
+    # Try Cloudflare tunnel first (no password, no HTTP 511 interstitial screen)
+    if not os.path.isfile(cf_bin) and sys.platform.startswith("linux"):
+        try:
+            print("🌐 Setting up direct Cloudflare tunnel (password-free, instant)...")
+            urllib.request.urlretrieve(
+                "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64",
+                cf_bin,
+            )
+            os.chmod(cf_bin, 0o755)
+        except Exception as e:
+            print(f"Cloudflared download notice: {e}")
+
+    if os.path.isfile(cf_bin):
+        try:
+            print("\n" + "=" * 70)
+            print("🚀 LAUNCHING CLOUDFLARE DIRECT WEB TUNNEL")
+            print("=" * 70)
+            cf_proc = subprocess.Popen(
+                [cf_bin, "tunnel", "--url", "http://127.0.0.1:8000"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            for line in cf_proc.stdout:
+                if "trycloudflare.com" in line:
+                    for part in line.split():
+                        if "trycloudflare.com" in part:
+                            clean_url = part.strip().strip("|").strip("()")
+                            if not clean_url.startswith("http"):
+                                clean_url = f"https://{clean_url}"
+                            print("\n" + "*" * 70, flush=True)
+                            print("🎉 CLICK HERE TO OPEN THE FULL APPLICATION IN YOUR BROWSER:", flush=True)
+                            print(f"👉 {clean_url}", flush=True)
+                            print("*" * 70 + "\n", flush=True)
+                            break
+            cf_proc.wait()
+            return
+        except Exception as e:
+            print(f"Cloudflare tunnel notice: {e}, falling back to localtunnel...")
+
+    # Fallback to localtunnel
     password = get_public_ip()
     print("\n" + "=" * 70)
     print("🌐 EXPOSING FULL WEB APP VIA LOCALTUNNEL")

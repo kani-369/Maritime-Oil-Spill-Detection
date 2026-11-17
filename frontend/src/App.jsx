@@ -175,14 +175,16 @@ export default function App() {
 
   // Load Real Kaggle Dataset & Health on Mount
   useEffect(() => {
+    const headers = { 'bypass-tunnel-reminder': 'true' };
+
     // 1. Fetch Health Status
-    fetch('/api/health')
+    fetch('/api/health', { headers })
       .then((r) => r.json())
       .then((data) => setHealth(data))
       .catch((err) => console.warn('Health check unreachable:', err));
 
     // 2. Fetch Real Dataset Images from Kaggle / Local
-    fetch('/api/samples')
+    fetch('/api/samples', { headers })
       .then((r) => r.json())
       .then((data) => {
         if (data.samples && data.samples.length > 0) {
@@ -237,6 +239,7 @@ export default function App() {
 
       const response = await fetch('/api/detect', {
         method: 'POST',
+        headers: { 'bypass-tunnel-reminder': 'true' },
         body: formData,
       });
 
@@ -292,6 +295,7 @@ export default function App() {
     try {
       const response = await fetch('/api/detect', {
         method: 'POST',
+        headers: { 'bypass-tunnel-reminder': 'true' },
         body: formData,
       });
       if (response.ok) {
