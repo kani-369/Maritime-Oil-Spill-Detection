@@ -147,6 +147,15 @@ export default function ProjectItemsPanel({
 
         {/* Item Cards List */}
         <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2">
+          {items.length === 0 && (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400 my-auto">
+              <Loader2 className="w-6 h-6 animate-spin text-cyan-400 mb-2" />
+              <span className="text-xs font-semibold text-slate-300">Loading Kaggle Images...</span>
+              <span className="text-[10px] text-slate-500 mt-1 max-w-[180px]">
+                Scanning /kaggle/input for test/images
+              </span>
+            </div>
+          )}
           {items.map((item) => {
             const isSelected = item.id === selectedItemId;
             return (

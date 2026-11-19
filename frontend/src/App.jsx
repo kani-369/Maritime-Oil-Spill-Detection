@@ -5,155 +5,17 @@ import ProjectItemsPanel from './components/ProjectItemsPanel';
 import MapViewer from './components/MapViewer';
 import LayersPanel from './components/LayersPanel';
 
-// Initial realistic project items matching the reference screenshot
-const INITIAL_PROJECT_ITEMS = [
-  {
-    id: 's1-20210423',
-    filename: 'S1A_IW_GRDH_20210423T152912_20210423T152937_037580_046E3A_9B4F',
-    date: '2021 Apr 23',
-    satellite: 'Sentinel-1A',
-    resolution: '10 m',
-    dimensions: '17,480 × 12,320',
-    status: 'processed',
-    thumbnailUrl: '/sample_data/sentinel1_sample.png',
-  },
-  {
-    id: 's1-20201218',
-    filename: 'S1A_IW_GRDH_20201218T054522_20201218T054547_035736_042E1F_1F98',
-    date: '2020 Dec 18',
-    satellite: 'Sentinel-1A',
-    resolution: '10 m',
-    dimensions: '17,480 × 12,320',
-    status: 'processed',
-    thumbnailUrl: '/sample_data/sentinel1_sample.png',
-  },
-  {
-    id: 's1-20200503',
-    filename: 'S1A_IW_GRDH_20200503T181204_20200503T181229_032408_03C089_4B12',
-    date: '2020 May 03',
-    satellite: 'Sentinel-1A',
-    resolution: '10 m',
-    dimensions: '17,480 × 12,320',
-    status: 'processed',
-    thumbnailUrl: '/sample_data/sentinel1_sample.png',
-  },
-  {
-    id: 's1-20200416',
-    filename: 'S1A_IW_GRDH_20200416T120531_20200416T120556_032156_03B7ED_8C31',
-    date: '2020 Apr 16',
-    satellite: 'Sentinel-1A',
-    resolution: '10 m',
-    dimensions: '17,480 × 12,320',
-    status: 'not_processed',
-    thumbnailUrl: '/sample_data/sentinel1_sample.png',
-  },
-];
-
-// Reference oil spill curved slick geometry matching the screenshot
-const DEFAULT_GEOJSON = {
-  type: 'FeatureCollection',
-  metadata: {
-    total_oil_spills: 1,
-    total_area_km2: 4.08,
-    crs: 'EPSG:4326',
-    has_georeference: true,
-  },
-  features: [
-    {
-      type: 'Feature',
-      id: 1,
-      properties: {
-        spill_id: 'OIL-20210423-001',
-        class_id: 1,
-        class_name: 'oil_spill',
-        area_km2: 4.08,
-        sheen_area_km2: 3.96,
-        thick_area_km2: 0.12,
-        mean_confidence: 0.87,
-        centroid: [42.1685, 17.678],
-        distance_to_shore_km: 0.0,
-      },
-      geometry: {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [42.164, 17.698],
-            [42.166, 17.693],
-            [42.166, 17.684],
-            [42.170, 17.681],
-            [42.174, 17.684],
-            [42.176, 17.680],
-            [42.174, 17.674],
-            [42.168, 17.673],
-            [42.165, 17.672],
-            [42.161, 17.668],
-            [42.158, 17.658],
-            [42.155, 17.645],
-            [42.154, 17.632],
-            [42.157, 17.620],
-            [42.163, 17.612],
-            [42.171, 17.608],
-            [42.179, 17.604],
-            [42.185, 17.602],
-            [42.183, 17.599],
-            [42.174, 17.601],
-            [42.166, 17.605],
-            [42.157, 17.612],
-            [42.151, 17.622],
-            [42.148, 17.636],
-            [42.150, 17.650],
-            [42.154, 17.662],
-            [42.158, 17.672],
-            [42.161, 17.680],
-            [42.162, 17.691],
-            [42.161, 17.697],
-            [42.164, 17.698],
-          ],
-        ],
-      },
-    },
-  ],
-};
-
-const DEFAULT_METADATA = {
-  image_id: 's1-20210423',
-  filename: 'S1A_IW_GRDH_20210423T152912_20210423T152937_037580_046E3A_9B4F',
-  detection_id: 'OIL-20210423-001',
-  width: 17480,
-  height: 12320,
-  crs: 'EPSG:4326',
-  has_georeference: true,
-  total_oil_spills: 1,
-  total_area_km2: 4.08,
-  sheen_area_km2: 3.96,
-  thick_area_km2: 0.12,
-  perimeter_km: 28.37,
-  centroid_lat_lon: '17.6842° N, 42.1759° E',
-  distance_to_shore_km: 0.0,
-  model_confidence: 0.87,
-  acquisition_date: '2021 Apr 23',
-  satellite: 'Sentinel-1A',
-  polarization: 'VV, VH',
-  resolution: '10 m',
-  maplibre_coordinates: [
-    [42.135, 17.715],
-    [42.205, 17.715],
-    [42.205, 17.585],
-    [42.135, 17.585],
-  ],
-};
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('Map');
-  const [projectItems, setProjectItems] = useState(INITIAL_PROJECT_ITEMS);
-  const [selectedItemId, setSelectedItemId] = useState('s1-20210423');
+  const [projectItems, setProjectItems] = useState([]);
+  const [selectedItemId, setSelectedItemId] = useState(null);
   const [health, setHealth] = useState(null);
   const [datasetDir, setDatasetDir] = useState(null);
   const [isInferring, setIsInferring] = useState(false);
 
-  const [metadata, setMetadata] = useState(DEFAULT_METADATA);
-  const [geojson, setGeojson] = useState(DEFAULT_GEOJSON);
-  const [previewUrl, setPreviewUrl] = useState('/sample_data/sentinel1_sample.png');
+  const [metadata, setMetadata] = useState(null);
+  const [geojson, setGeojson] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [maskPreviewUrl, setMaskPreviewUrl] = useState('');
 
   // Panel Collapsing State
@@ -212,13 +74,26 @@ export default function App() {
       setPreviewUrl(item.previewUrl);
     }
     if (item.status === 'processed') {
-      setMetadata((prev) => ({
-        ...prev,
+      if (item.cachedMetadata) setMetadata(item.cachedMetadata);
+      if (item.cachedGeojson) setGeojson(item.cachedGeojson);
+      if (item.cachedMask) setMaskPreviewUrl(item.cachedMask);
+    } else {
+      setGeojson(null);
+      setMaskPreviewUrl('');
+      setMetadata({
+        image_id: item.id,
         filename: item.filename,
+        detection_id: `OIL-${item.id}`,
+        width: 512,
+        height: 512,
+        crs: 'EPSG:4326',
+        has_georeference: false,
+        total_oil_spills: 0,
+        total_area_km2: 0.0,
         acquisition_date: item.date,
         satellite: item.satellite,
         resolution: item.resolution,
-      }));
+      });
     }
   };
 
@@ -254,10 +129,19 @@ export default function App() {
       setPreviewUrl(data.preview_url);
       setMaskPreviewUrl(data.mask_preview_url);
 
-      // Update item status in list to processed
+      // Update item status in list to processed and cache results
       setProjectItems((prev) =>
         prev.map((it) =>
-          it.id === item.id ? { ...it, status: 'processed', previewUrl: data.preview_url } : it
+          it.id === item.id
+            ? {
+                ...it,
+                status: 'processed',
+                previewUrl: data.preview_url,
+                cachedMetadata: data.metadata,
+                cachedGeojson: data.geojson,
+                cachedMask: data.mask_preview_url,
+              }
+            : it
         )
       );
     } catch (err) {

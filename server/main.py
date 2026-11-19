@@ -207,13 +207,18 @@ def get_sample_files():
     """List real dataset test images from Kaggle or local repository."""
     dataset_dir = find_dataset_images_dir()
     sample_dirs = [dataset_dir] if dataset_dir else []
-    sample_dirs.extend([
-        "/kaggle/input/datasets/kanish369/m4d-mambampd-corrected/M4D_MambaMPD_corrected/test/images",
-        "/kaggle/input/m4d-mambampd-corrected/M4D_MambaMPD_corrected/test/images",
-        "/kaggle/input/m4d-mambampd-corrected/test/images",
-        "sample_data",
-        "sample_padding_image_for_inference",
-    ])
+    
+    # If on Kaggle and no dataset_dir yet, check common explicit mounts
+    if os.path.isdir("/kaggle/input"):
+        sample_dirs.extend([
+            "/kaggle/input/datasets/kanish369/m4d-mambampd-corrected/M4D_MambaMPD_corrected/test/images",
+            "/kaggle/input/m4d-mambampd-corrected/M4D_MambaMPD_corrected/test/images",
+            "/kaggle/input/M4D_MambaMPD_corrected/M4D_MambaMPD_corrected/test/images",
+            "/kaggle/input/m4d_mambampd_corrected/M4D_MambaMPD_corrected/test/images",
+        ])
+    else:
+        # Local development fallback
+        sample_dirs.extend(["sample_padding_image_for_inference", "sample_data"])
 
     seen_files = set()
     items = []

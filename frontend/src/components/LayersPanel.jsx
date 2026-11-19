@@ -59,47 +59,47 @@ export default function LayersPanel({
     );
   }
 
-  // Telemetry items matching the reference screenshot exactly
+  // Telemetry items matching detection output
   const detectionFields = [
-    { label: 'Detection ID', value: metadata?.detection_id || 'OIL-20210423-001' },
+    { label: 'Detection ID', value: metadata?.detection_id || '—' },
     {
       label: 'Oil Spill Area',
-      value: metadata?.total_area_km2 !== undefined ? `${Number(metadata.total_area_km2).toFixed(2)} km²` : '4.08 km²',
+      value: metadata?.total_area_km2 !== undefined ? `${Number(metadata.total_area_km2).toFixed(2)} km²` : '—',
       highlight: true,
     },
     {
       label: 'Sheen Area',
-      value: metadata?.sheen_area_km2 !== undefined ? `${Number(metadata.sheen_area_km2).toFixed(2)} km²` : '3.96 km²',
+      value: metadata?.sheen_area_km2 !== undefined ? `${Number(metadata.sheen_area_km2).toFixed(2)} km²` : '—',
     },
     {
       label: 'Thick Area',
-      value: metadata?.thick_area_km2 !== undefined ? `${Number(metadata.thick_area_km2).toFixed(2)} km²` : '0.12 km²',
+      value: metadata?.thick_area_km2 !== undefined ? `${Number(metadata.thick_area_km2).toFixed(2)} km²` : '—',
     },
     {
       label: 'Perimeter',
-      value: metadata?.perimeter_km !== undefined ? `${Number(metadata.perimeter_km).toFixed(2)} km` : '28.37 km',
+      value: metadata?.perimeter_km !== undefined ? `${Number(metadata.perimeter_km).toFixed(2)} km` : '—',
     },
     {
       label: 'Centroid (Lat, Lon)',
-      value: metadata?.centroid_lat_lon || '17.6842° N, 42.1759° E',
+      value: metadata?.centroid_lat_lon || '—',
       mono: true,
     },
     {
       label: 'Distance to Shore',
-      value: metadata?.distance_to_shore_km !== undefined ? `${Number(metadata.distance_to_shore_km).toFixed(1)} km` : '0.0 km',
+      value: metadata?.distance_to_shore_km !== undefined ? `${Number(metadata.distance_to_shore_km).toFixed(1)} km` : '—',
     },
     {
       label: 'Model Confidence',
-      value: metadata?.model_confidence !== undefined ? `${Number(metadata.model_confidence).toFixed(2)}` : '0.87',
+      value: metadata?.model_confidence !== undefined ? `${Number(metadata.model_confidence).toFixed(2)}` : '—',
       mono: true,
     },
     {
       label: 'Acquisition Date',
-      value: metadata?.acquisition_date || '2021 Apr 23',
+      value: metadata?.acquisition_date || '—',
     },
     {
       label: 'Satellite',
-      value: metadata?.satellite || 'Sentinel-1A',
+      value: metadata?.satellite || 'Sentinel-1 SAR',
     },
     {
       label: 'Polarization',
